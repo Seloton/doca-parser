@@ -21,32 +21,32 @@ class DocaParser(object):
             file.writelines(self.errors)
 
     def get_payload(self, data):
-        payload = None
         cod = data["cod"]
         name = data["Name"]
         fio = str(name).split()
-        if len(fio) == 2:
-            if len(fio[1]) == 2:
-                payload = {
-                    'name': fio[1][0],
-                    'surname': fio[0],
-                    'patronymic': fio[1][1],
-                    'cod': cod
-                }
-            elif len(fio[1]) == 1:
-                payload = {
-                    'name': fio[1][0],
-                    'surname': fio[0],
-                    'patronymic': '',
-                    'cod': cod
-                }
-        else:
+        if len(fio) >= 3:
             payload = {
-                'name': '',
                 'surname': fio[0],
+                'name': fio[1],
+                'patronymic': fio[2],
+                'cod': cod
+            }
+        elif len(fio) == 2:
+            payload = {
+                'surname': fio[0],
+                'name': fio[1],
                 'patronymic': '',
                 'cod': cod
             }
+        elif len(fio) == 1:
+            payload = {
+                'surname': fio[0],
+                'name': '',
+                'patronymic': '',
+                'cod': cod
+            }
+        else:
+            return None
         return payload
 
     def split_codes(self, cod_value):
@@ -131,18 +131,17 @@ class DocaParser(object):
             self.errors.append(f'[{time.ctime()} in open] {e}\n')
             print(e)
 
-
     def save_to_file(self, file_name, text):
-        print(f'Сохранение в файл {file_name}...')
-        with open(file_name, 'w', encoding='cp1251') as file:
+        folder = 'analis'
+        file_path = os.path.join(folder, file_name)
+        print(f'Сохранение в файл {file_path}...')
+        with open(file_path, 'w', encoding='cp1251') as file:
             file.write(text)
-
 
     def save_to_json(self, file_name, data):
         print(f'Сохранение в файл {file_name}...')
         with open(file_name, 'w', encoding='utf-8') as file:
             json.dump(data, file, ensure_ascii=False)
-
 
     def find_patient_info(self, patient, history_num=1, cod_index=0):
         print(
@@ -246,9 +245,7 @@ class DocaParser(object):
                 + patient['name']
                 + patient['patronymic']
                 + '_analyzes_'
-                + str(num)
-                + '_'
-                + str(cod_index)
+                + str(patient['cod'])
                 + '.html'
             )
             self.save_to_file(file_name, self.driver.page_source)
